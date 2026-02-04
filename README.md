@@ -1,0 +1,1 @@
+use "make clean" and then "make run" to recompile and launch the simulation.
