@@ -14,13 +14,12 @@ kernel void diffuse_decay(
     constant SimulationUniforms& u [[buffer(2)]],
     uint2 gid [[thread_position_in_grid]]
 ) {
-    if (gid.x >= inTex.get_width() || gid.y >= inTex.get_height()) return;
+    if (gid.x >= inTex.get_width() || gid.y >= inTex.get_height()) {return;}
 
 
     float4 sum = 0;
     for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
-
             uint2 pos = uint2(gid.x + dx, gid.y + dy);
             sum += inTex.read(pos);
         }
@@ -37,12 +36,10 @@ kernel void diffuse_decay(
 }
 
 float sense(texture2d<float, access::read> grid, float2 pos, float angle, float dist, float sizeX, float sizeY) {
+
     float2 sensorDir = float2(cos(angle), sin(angle));
     float2 sensorPos = pos + sensorDir * dist;
-    
-
     uint2 texPos = uint2(sensorPos);
-    
 
     if (texPos.x >= sizeX || texPos.y >= sizeY) return 0.0;
     
@@ -82,7 +79,7 @@ kernel void update_ants(
     float sensorDist = u.sensorDist;
     
     float vLeft   = sense(inTex, pos, angle + sensorAngle, sensorDist, width, height);
-    float vCenter = sense(inTex, pos, angle,               sensorDist, width, height);
+    float vCenter = sense(inTex, pos, angle, sensorDist, width, height);
     float vRight  = sense(inTex, pos, angle - sensorAngle, sensorDist, width, height);
 
     float turnSpeed = 0.5; // A ajouter dans l'uniform si besoin
@@ -118,7 +115,7 @@ kernel void update_ants(
 
     uint2 texPos = uint2(nextPos);
     if(texPos.x < width && texPos.y < height) {
-        outTex.write(float4(1.0, 0.0, 0.0, 1.0), texPos); // Rouge
+        outTex.write(float4(1.0, 0.0, 0.0, 1.0), texPos);
     }
 
     ant.position = nextPos;
@@ -171,8 +168,8 @@ constant float2 fullQuad[] = {
 vertex PheroOut pheromone_vertex(uint vid [[vertex_id]]) {
     PheroOut out;
     out.position = float4(fullQuad[vid], 0.0, 1.0);
-    out.uv = fullQuad[vid] * 0.5 + 0.5; // 0..1
-    out.uv.y = 1.0 - out.uv.y; // Inversion Y texture
+    out.uv = fullQuad[vid] * 0.5 + 0.5;
+    out.uv.y = 1.0 - out.uv.y;
     return out;
 }
 
