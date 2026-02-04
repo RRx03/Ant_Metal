@@ -47,18 +47,21 @@ vertex VertexOut ant_vertex(
     return out;
 }
 
-fragment float4 ant_fragment(VertexOut in [[stage_in]],
-                             texture2d<float> spriteTexture [[texture(0)]]) {
-    constexpr sampler s(mag_filter::linear, min_filter::linear);
+// fragment float4 ant_fragment(VertexOut in [[stage_in]],
+//                              texture2d<float> spriteTexture [[texture(0)]]) {
+//     constexpr sampler s(mag_filter::linear, min_filter::linear);
     
 
-    float4 color = spriteTexture.sample(s, in.uv);
+//     float4 color = spriteTexture.sample(s, in.uv);
     
-    if (color.a < 0.1) discard_fragment();
+//     if (color.a < 0.1) discard_fragment();
     
-    return color;
+//     return color;
+// }
+fragment float4 ant_fragment(VertexOut in [[stage_in]]) {
+    // VERSION DEBUG : On renvoie du blanc pur
+    return float4(1.0, 1.0, 1.0, 1.0);
 }
-
 
 kernel void compute_main(
     device float* resultBuffer [[buffer(0)]],

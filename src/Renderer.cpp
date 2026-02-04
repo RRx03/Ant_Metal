@@ -4,6 +4,9 @@
 #include <iostream>
 
 Renderer::Renderer(SDL_Window *window) {
+  _width = Config::WINDOW_WIDTH;
+  _height = Config::WINDOW_HEIGHT;
+  _settings = Config::Settings();
   this->_device = MTL::CreateSystemDefaultDevice();
   if (!this->_device) {
     throw std::runtime_error("No Metal GPU found");
