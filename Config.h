@@ -10,7 +10,7 @@ constexpr int MAX_ANTS = 500000;
 
 struct Settings {
   int antCount = 100;
-  float antSize = 3.0f;
+  float antSize = 10.0f;
   float antSpeed = 2.0f;
   float sensorAngle = 0.78f;
   float sensorDist = 15.0f;

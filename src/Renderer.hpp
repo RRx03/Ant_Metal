@@ -34,4 +34,7 @@ private:
 
   MTL::Texture *_msaaTexture = nullptr;
   const int _sampleCount = 4;
+
+  MTL::Texture *_pheromoneTextureA = nullptr;
+  MTL::Texture *_pheromoneTextureB = nullptr;
 };

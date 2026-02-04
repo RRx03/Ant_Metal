@@ -7,7 +7,7 @@ BIN_PATH = $(BUILD_DIR)/$(APP_NAME)
 METALLIB = $(BUILD_DIR)/default.metallib
 
 CXX = clang++
-CXXFLAGS = -std=c++17 -I. -I$(SRC_FOLDER) -I/opt/homebrew/include
+CXXFLAGS = -std=c++17 -I. -I$(SRC_FOLDER) -I/opt/homebrew/include -MMD -MP
 SDL2_CFLAGS := $(shell sdl2-config --cflags)
 SDL2_LDFLAGS := $(shell sdl2-config --libs)
 FRAMEWORKS = -framework Metal -framework Foundation -framework QuartzCore -framework CoreGraphics
@@ -15,9 +15,13 @@ FRAMEWORKS = -framework Metal -framework Foundation -framework QuartzCore -frame
 SRCS := $(wildcard $(SRC_FOLDER)/*.cpp)
 OBJS := $(patsubst $(SRC_FOLDER)/%.cpp, $(OBJS_FOLDER)/%.o, $(SRCS))
 
+DEPS := $(OBJS:.o=.d)
+
 .PHONY: all clean run copy_shaders
 
+
 all: $(BIN_PATH) $(METALLIB)
+
 $(BIN_PATH): $(OBJS)
 	@echo "Linkage de l'exécutable..."
 	@mkdir -p $(BUILD_DIR)
@@ -36,6 +40,8 @@ $(METALLIB): shaders/shader.metal
 	xcrun -sdk macosx metallib $(BUILD_DIR)/shader.air -o $(METALLIB)
 	@rm $(BUILD_DIR)/shader.air 
 	@echo "Shaders compilés dans $(METALLIB)"
+
+-include $(DEPS)
 
 clean:
 	rm -rf $(BUILD_DIR)

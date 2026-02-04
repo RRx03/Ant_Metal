@@ -20,6 +20,15 @@ Renderer::Renderer(SDL_Window *window) {
 
   this->_layer->setDevice(_device);
   this->_layer->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
+  MTL::TextureDescriptor *desc = MTL::TextureDescriptor::alloc()->init();
+
+  desc->setPixelFormat(MTL::PixelFormatR16Float);
+  desc->setWidth(_width);
+  desc->setHeight(_height);
+
+  _pheromoneTextureA = _device->newTexture(desc);
+  _pheromoneTextureB = _device->newTexture(desc);
+  desc->release();
 
   buildShaders();
   buildBuffers();
@@ -132,7 +141,16 @@ void Renderer::resize(int width, int height) {
 
   _layer->setDrawableSize(CGSizeMake(width, height));
 
-  // Nettoyage
+  MTL::TextureDescriptor *desc = MTL::TextureDescriptor::alloc()->init();
+
+  desc->setPixelFormat(MTL::PixelFormatR16Float);
+  desc->setWidth(_width);
+  desc->setHeight(_height);
+
+  _pheromoneTextureA = _device->newTexture(desc);
+  _pheromoneTextureB = _device->newTexture(desc);
+  desc->release();
+
   if (_msaaTexture)
     _msaaTexture->release();
   if (_depthTexture)
