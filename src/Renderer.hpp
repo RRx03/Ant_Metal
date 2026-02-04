@@ -1,9 +1,10 @@
 #pragma once
-
 #include "Config.h"
+#include "Shared.h"
 #include "metal-cpp/Metal/Metal.hpp"
 #include "metal-cpp/QuartzCore/QuartzCore.hpp"
-#include <SDL.h>
+#include <SDL2/SDL.h>
+
 class Renderer {
 public:
   Renderer(SDL_Window *window);
@@ -18,23 +19,27 @@ private:
   void updateUniforms();
 
   Config::Settings _settings;
+  int _width, _height;
+  int _frameIndex = 0;
 
-  MTL::Device *_device = nullptr;
-  MTL::CommandQueue *_commandQueue = nullptr;
-  CA::MetalLayer *_layer = nullptr;
-
-  MTL::RenderPipelineState *_renderPSO = nullptr;
-  MTL::Texture *_depthTexture = nullptr;
-  MTL::DepthStencilState *_depthStencilState = nullptr;
+  MTL::Device *_device;
+  MTL::CommandQueue *_commandQueue;
+  CA::MetalLayer *_layer;
 
   MTL::Buffer *_antBuffer = nullptr;
   MTL::Buffer *_uniformBuffer = nullptr;
 
-  int _width, _height; // Pour le ratio d'aspect
+  MTL::Texture *_pheromoneTextures[2] = {nullptr, nullptr};
 
   MTL::Texture *_msaaTexture = nullptr;
-  const int _sampleCount = 4;
+  MTL::Texture *_depthTexture = nullptr;
 
-  MTL::Texture *_pheromoneTextureA = nullptr;
-  MTL::Texture *_pheromoneTextureB = nullptr;
+  MTL::RenderPipelineState *_renderAntsPSO = nullptr;
+  MTL::RenderPipelineState *_renderPheromonesPSO = nullptr;
+
+  MTL::ComputePipelineState *_computeMovePSO = nullptr;
+  MTL::ComputePipelineState *_computeDiffusePSO = nullptr;
+
+  MTL::DepthStencilState *_depthStencilState = nullptr;
+  const int _sampleCount = 4;
 };

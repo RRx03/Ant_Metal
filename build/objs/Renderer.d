@@ -1,5 +1,6 @@
 build/objs/Renderer.o: src/Renderer.cpp src/Renderer.hpp Config.h \
-  metal-cpp/Metal/Metal.hpp metal-cpp/Metal/MTLAccelerationStructure.hpp \
+  src/Shared.h metal-cpp/Metal/Metal.hpp \
+  metal-cpp/Metal/MTLAccelerationStructure.hpp \
   metal-cpp/Metal/../Foundation/Foundation.hpp \
   metal-cpp/Metal/../Foundation/NSArray.hpp \
   metal-cpp/Metal/../Foundation/NSObject.hpp \
@@ -160,9 +161,10 @@ build/objs/Renderer.o: src/Renderer.cpp src/Renderer.hpp Config.h \
   /opt/homebrew/include/SDL2/SDL_timer.h \
   /opt/homebrew/include/SDL2/SDL_version.h \
   /opt/homebrew/include/SDL2/SDL_locale.h \
-  /opt/homebrew/include/SDL2/SDL_misc.h src/MathUtils.h src/Shared.h
+  /opt/homebrew/include/SDL2/SDL_misc.h src/MathUtils.h
 src/Renderer.hpp:
 Config.h:
+src/Shared.h:
 metal-cpp/Metal/Metal.hpp:
 metal-cpp/Metal/MTLAccelerationStructure.hpp:
 metal-cpp/Metal/../Foundation/Foundation.hpp:
@@ -344,4 +346,3 @@ metal-cpp/QuartzCore/../Foundation/NSTypes.hpp:
 /opt/homebrew/include/SDL2/SDL_locale.h:
 /opt/homebrew/include/SDL2/SDL_misc.h:
 src/MathUtils.h:
-src/Shared.h:
