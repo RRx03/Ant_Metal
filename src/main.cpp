@@ -2,6 +2,7 @@
 #include <SDL2/SDL_metal.h>
 #include <iostream>
 
+#include "Config.h"
 #include "metal-cpp/Foundation/Foundation.hpp"
 #include "metal-cpp/Metal/Metal.hpp"
 #include "metal-cpp/QuartzCore/QuartzCore.hpp"
@@ -15,7 +16,8 @@ int main() {
   }
 
   SDL_Window *window = SDL_CreateWindow(
-      "Project1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600,
+      "Project1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+      Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT,
       SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_METAL | SDL_WINDOW_SHOWN);
 
   if (!window) {

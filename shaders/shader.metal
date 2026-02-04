@@ -2,33 +2,64 @@
 using namespace metal;
 #include "../src/Shared.h"
 
-struct RasterizerData {
+struct VertexOut {
     float4 position [[position]];
-    float4 color;
+    float2 uv; // Coordonnées de texture pour le sprite
 };
 
-vertex RasterizerData vertex_main(
+constant float2 quadVertices[] = {
+    {-0.5, -0.5}, { 0.5, -0.5}, {-0.5,  0.5},
+    { 0.5, -0.5}, { 0.5,  0.5}, {-0.5,  0.5}
+};
+
+float2x2 rotationMatrix(float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return float2x2(c, -s, s, c);
+}
+
+vertex VertexOut ant_vertex(
     uint vertexID [[vertex_id]],
-    constant VertexData* vertices [[buffer(0)]],
-    constant Uniforms& uniforms   [[buffer(1)]]
+    uint instanceID [[instance_id]],
+    constant AntData* ants [[buffer(0)]],
+    constant SimulationUniforms& uniforms [[buffer(1)]]
 ) {
-    RasterizerData out;
+    VertexOut out;
     
-    float4 pos = float4(vertices[vertexID].position, 1.0);
+    AntData ant = ants[instanceID];
     
+    float2 localPos = quadVertices[vertexID];
     
+    float antSize = 10.0; //Must be added to the uniforms later
+    float2 rotatedPos = rotationMatrix(ant.angle) * (localPos * antSize);
     
-    float4 worldPos = uniforms.modelMatrix * pos;
-    float4 viewPos  = uniforms.viewMatrix * worldPos;
-    out.position    = uniforms.projectionMatrix * viewPos;
+    float2 worldPos = rotatedPos + ant.position;
     
-    out.color = float4(vertices[vertexID].color, 1.0);
+
+
+    float2 clipPos = (worldPos / uniforms.worldSize) * 2.0 - 1.0;
+    
+    out.position = float4(clipPos.x, -clipPos.y, 0.0, 1.0);
+    
+
+    out.uv = localPos + 0.5; 
+    
     return out;
 }
 
-fragment float4 fragment_main(RasterizerData in [[stage_in]]) {
-    return in.color;
+fragment float4 ant_fragment(VertexOut in [[stage_in]],
+                             texture2d<float> spriteTexture [[texture(0)]]) {
+    constexpr sampler s(mag_filter::linear, min_filter::linear);
+    
+
+    float4 color = spriteTexture.sample(s, in.uv);
+    
+    if (color.a < 0.1) discard_fragment();
+    
+    return color;
 }
+
+
 kernel void compute_main(
     device float* resultBuffer [[buffer(0)]],
     uint index [[thread_position_in_grid]]

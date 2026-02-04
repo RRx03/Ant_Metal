@@ -28,19 +28,14 @@ Renderer::~Renderer() {
     _depthTexture->release();
   if (_uniformBuffer)
     _uniformBuffer->release();
-
-  if (_vertexBuffer)
-    _vertexBuffer->release();
   if (_renderPSO)
     _renderPSO->release();
+  if (_antBuffer)
+    _antBuffer->release();
 
   if (_depthStencilState)
     _depthStencilState->release();
 
-  if (_computePSO)
-    _computePSO->release();
-  if (_computeBuffer)
-    _computeBuffer->release();
   if (_commandQueue)
     _commandQueue->release();
   if (_device)
@@ -63,9 +58,9 @@ void Renderer::buildShaders() {
   }
 
   MTL::Function *vertexFn = defaultLibrary->newFunction(
-      NS::String::string("vertex_main", NS::UTF8StringEncoding));
+      NS::String::string("ant_vertex", NS::UTF8StringEncoding));
   MTL::Function *fragFn = defaultLibrary->newFunction(
-      NS::String::string("fragment_main", NS::UTF8StringEncoding));
+      NS::String::string("ant_fragment", NS::UTF8StringEncoding));
 
   MTL::DepthStencilDescriptor *depthDesc =
       MTL::DepthStencilDescriptor::alloc()->init();
@@ -88,57 +83,50 @@ void Renderer::buildShaders() {
     std::cerr << "Erreur PSO Graphique: "
               << error->localizedDescription()->utf8String() << std::endl;
 
-  MTL::Function *computeFn = defaultLibrary->newFunction(
-      NS::String::string("compute_main", NS::UTF8StringEncoding));
-  _computePSO = _device->newComputePipelineState(computeFn, &error);
-  if (!_computePSO)
-    std::cerr << "Erreur PSO Compute: "
-              << error->localizedDescription()->utf8String() << std::endl;
-
   vertexFn->release();
   fragFn->release();
-  computeFn->release();
+
   pipeDesc->release();
   defaultLibrary->release();
 }
 void Renderer::buildBuffers() {
-  std::vector<VertexData> vertices = {
-      {{0.0f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-      {{-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-      {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}};
 
-  size_t bufferSize = vertices.size() * sizeof(VertexData);
-  _vertexBuffer = _device->newBuffer(vertices.data(), bufferSize,
-                                     MTL::ResourceStorageModeShared);
+  int count = _settings.antCount;
 
-  _uniformBuffer =
-      _device->newBuffer(sizeof(Uniforms), MTL::ResourceStorageModeShared);
+  std::vector<AntData> ants(count);
 
-  size_t computeBufferSize = sizeof(float) * 100;
-  _computeBuffer =
-      _device->newBuffer(computeBufferSize, MTL::ResourceStorageModeShared);
+  for (int i = 0; i < count; i++) {
+    ants[i].position = {(float)(rand() % _width), (float)(rand() % _height)};
+    ants[i].angle = (float)(rand() % 360) * M_PI / 180.0f;
+  }
+
+  size_t bufferSize = count * sizeof(AntData);
+  _antBuffer = _device->newBuffer(ants.data(), bufferSize,
+                                  MTL::ResourceStorageModeShared);
+
+  _uniformBuffer = _device->newBuffer(sizeof(SimulationUniforms),
+                                      MTL::ResourceStorageModeShared);
 }
 
 void Renderer::updateUniforms() {
-  _angle += 0.01f;
+  SimulationUniforms uniforms;
 
-  Uniforms u;
+  uniforms.antCount = _settings.antCount;
+  uniforms.antSpeed = _settings.antSpeed;
+  uniforms.sensorAngle = _settings.sensorAngle;
+  uniforms.sensorDist = _settings.sensorDist;
+  uniforms.evapSpeed = _settings.evapSpeed;
+  uniforms.worldSize = {(float)_width, (float)_height};
+  uniforms.time = 0.0f;
+  uniforms.deltaTime = 1.0f / 60.0f;
 
-  u.modelMatrix = Math::makeYRotation(_angle);
-
-  u.viewMatrix = Math::makeTranslate({0.0f, 0.0f, -3.0f});
-
-  float aspect = (float)_width / (float)_height;
-  u.projectionMatrix =
-      Math::makePerspective(Math::radians(45.0f), aspect, 0.1f, 100.0f);
-
-  void *ptr = _uniformBuffer->contents();
-  memcpy(ptr, &u, sizeof(Uniforms));
+  memcpy(_uniformBuffer->contents(), &uniforms, sizeof(SimulationUniforms));
 }
 
 void Renderer::resize(int width, int height) {
   _width = width;
   _height = height;
+
   _layer->setDrawableSize(CGSizeMake(width, height));
 
   // Nettoyage
@@ -187,17 +175,6 @@ void Renderer::renderFrame() {
 
     MTL::CommandBuffer *buffer = _commandQueue->commandBuffer();
 
-    MTL::ComputeCommandEncoder *computeEncoder =
-        buffer->computeCommandEncoder();
-    computeEncoder->setComputePipelineState(_computePSO);
-    computeEncoder->setBuffer(_computeBuffer, 0, 0);
-
-    MTL::Size gridSize = MTL::Size::Make(100, 1, 1);
-    MTL::Size threadGroupSize =
-        MTL::Size::Make(_computePSO->maxTotalThreadsPerThreadgroup(), 1, 1);
-    computeEncoder->dispatchThreads(gridSize, threadGroupSize);
-    computeEncoder->endEncoding();
-
     MTL::RenderPassDescriptor *pass =
         MTL::RenderPassDescriptor::renderPassDescriptor();
     MTL::RenderPassColorAttachmentDescriptor *colorAttachment =
@@ -223,7 +200,7 @@ void Renderer::renderFrame() {
     renderEncoder->setRenderPipelineState(_renderPSO);
     renderEncoder->setDepthStencilState(_depthStencilState);
 
-    renderEncoder->setVertexBuffer(_vertexBuffer, 0, 0);
+    renderEncoder->setVertexBuffer(_antBuffer, 0, 0);
     renderEncoder->setVertexBuffer(_uniformBuffer, 0, 1);
 
     renderEncoder->drawPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(0),
