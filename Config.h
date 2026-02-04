@@ -15,5 +15,7 @@ struct Settings {
   float sensorAngle = 0.78f;
   float sensorDist = 15.0f;
   float evapSpeed = 0.98f;
+  float depositAmount = 0.1f;
+  float turnAngle = 0.3f;
 };
 } // namespace Config

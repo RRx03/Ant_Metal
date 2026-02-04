@@ -16,6 +16,8 @@ struct SimulationUniforms {
   float sensorAngle;
   float sensorDist;
   float evapSpeed;
+  float depositAmount;
+  float turnAngle;
   vector_float2 worldSize;
   float time;
   float deltaTime;

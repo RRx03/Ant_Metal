@@ -73,11 +73,10 @@ kernel void diffuse_decay(
     uint2 gid [[thread_position_in_grid]], 
     constant SimulationUniforms& uniforms [[buffer(1)]])
 {
-    uint2 gid = uint2(get_global_id(0), get_global_id(1));
     float sum = 0.0;
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
-            sum += textureA.read(uint2(gid.x + x, gid.y + y)).rotatedPos;
+            sum += textureA.read(uint2(gid.x + x, gid.y + y)).r;
         }
     }
     float average = sum / 9.0;
@@ -94,9 +93,9 @@ kernel void update_ants(
 {
     //follow a drunkard walk influenced /weighted by pheromones
     AntData ant = ants[gid.x]; // assuming gid.x indexes the ants
-    float2 forwardSensorOffset = float2(cos(ant.angle), sin(ant.angle)) * uniforms.sensorOffset;
-    float2 leftSensorOffset = float2(cos(ant.angle + uniforms.sensorAngle), sin(ant.angle + uniforms.sensorAngle)) * uniforms.sensorOffset;
-    float2 rightSensorOffset = float2(cos(ant.angle - uniforms.sensorAngle), sin(ant.angle - uniforms.sensorOffset )) * uniforms.sensorOffset;
+    float2 forwardSensorOffset = float2(cos(ant.angle), sin(ant.angle)) * uniforms.sensorDist;
+    float2 leftSensorOffset = float2(cos(ant.angle + uniforms.sensorAngle), sin(ant.angle + uniforms.sensorAngle)) * uniforms.sensorDist;
+    float2 rightSensorOffset = float2(cos(ant.angle - uniforms.sensorAngle), sin(ant.angle - uniforms.sensorAngle )) * uniforms.sensorDist;
     float forwardSample = texture.read(uint2(ant.position + forwardSensorOffset)).r;
     float leftSample = texture.read(uint2(ant.position + leftSensorOffset)).r;
     float rightSample = texture.read(uint2(ant.position + rightSensorOffset)).r;

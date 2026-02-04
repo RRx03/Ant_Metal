@@ -128,6 +128,8 @@ void Renderer::updateUniforms() {
   uniforms.sensorAngle = _settings.sensorAngle;
   uniforms.sensorDist = _settings.sensorDist;
   uniforms.evapSpeed = _settings.evapSpeed;
+  uniforms.depositAmount = _settings.depositAmount;
+  uniforms.turnAngle = _settings.turnAngle;
   uniforms.worldSize = {(float)_width, (float)_height};
   uniforms.time = 0.0f;
   uniforms.deltaTime = 1.0f / 60.0f;
