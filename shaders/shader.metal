@@ -30,7 +30,7 @@ vertex VertexOut ant_vertex(
     
     float2 localPos = quadVertices[vertexID];
     
-    float antSize = 10.0; //Must be added to the uniforms later
+    float antSize = uniforms.antSize;
     float2 rotatedPos = rotationMatrix(ant.angle) * (localPos * antSize);
     
     float2 worldPos = rotatedPos + ant.position;

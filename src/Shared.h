@@ -12,6 +12,7 @@ struct AntData {
 struct SimulationUniforms {
   unsigned int antCount;
   float antSpeed;
+  float antSize;
   float sensorAngle;
   float sensorDist;
   float evapSpeed;

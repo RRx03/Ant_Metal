@@ -113,7 +113,7 @@ void Renderer::buildBuffers() {
 
 void Renderer::updateUniforms() {
   SimulationUniforms uniforms;
-
+  uniforms.antSize = _settings.antSize;
   uniforms.antCount = _settings.antCount;
   uniforms.antSpeed = _settings.antSpeed;
   uniforms.sensorAngle = _settings.sensorAngle;
@@ -207,7 +207,8 @@ void Renderer::renderFrame() {
     renderEncoder->setVertexBuffer(_uniformBuffer, 0, 1);
 
     renderEncoder->drawPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(0),
-                                  NS::UInteger(3));
+                                  NS::UInteger(6),
+                                  NS::UInteger(_settings.antCount));
 
     renderEncoder->endEncoding();
 
