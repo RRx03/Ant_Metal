@@ -9,13 +9,13 @@ constexpr int WINDOW_HEIGHT = 720;
 constexpr int MAX_ANTS = 500000;
 
 struct Settings {
-  int antCount = 1000;
-  float antSize = 10.0f;
-  float antSpeed = 2.0f;
+  int antCount = 2000000;
+  float antSize = 0.2f;
+  float antSpeed = 3.0f;
   float sensorAngle = 0.78f;
-  float sensorDist = 15.0f;
-  float evapSpeed = 0.98f;
+  float sensorDist = 5.0f;
+  float evapSpeed = 0.50f;
   float depositAmount = 0.1f;
-  float turnAngle = 0.3f;
+  float turnAngle = 0.4f;
 };
 } // namespace Config

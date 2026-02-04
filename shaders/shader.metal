@@ -82,12 +82,12 @@ kernel void update_ants(
     float vCenter = sense(inTex, pos, angle, sensorDist, width, height);
     float vRight  = sense(inTex, pos, angle - sensorAngle, sensorDist, width, height);
 
-    float turnSpeed = 0.5; // A ajouter dans l'uniform si besoin
+    float turnSpeed = u.turnAngle;
     uint rnd = hash(id + uint(u.time * 100000.0));
 
     if (vCenter > vLeft && vCenter > vRight) {
         
-        if ((rnd % 100) < 10) angle += (rnd % 2 == 0 ? 1 : -1) * 0.05;
+        if ((rnd % 100) < 10) angle += (rnd % 2 == 0 ? 1 : -1) * turnSpeed * (hash(rnd) % 100) / 100.0;
     }
     else if (vCenter < vLeft && vCenter < vRight) {
         angle += (rnd % 2 == 0 ? 1 : -1) * turnSpeed * 2.0;
@@ -115,7 +115,7 @@ kernel void update_ants(
 
     uint2 texPos = uint2(nextPos);
     if(texPos.x < width && texPos.y < height) {
-        outTex.write(float4(1.0, 0.0, 0.0, 1.0), texPos);
+        outTex.write(float4(u.depositAmount, 0.0, 0.0, 1.0), texPos);
     }
 
     ant.position = nextPos;
@@ -141,7 +141,7 @@ vertex VertexOut ant_vertex(
     AntData ant = ants[iid];
     
 
-    float2 worldPos = rotMat(ant.angle) * (local * 3.0) + ant.position;
+    float2 worldPos = rotMat(ant.angle) * (local * u.antSize) + ant.position;
     
 
     float2 clip = (worldPos / u.worldSize) * 2.0 - 1.0;
