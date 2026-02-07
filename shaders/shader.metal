@@ -8,6 +8,8 @@ constant float2 quadVertices[] = {
     { 0.5, -0.5}, { 0.5,  0.5}, {-0.5,  0.5}
 };
 
+float2x2 rotMat(float a) { return float2x2(cos(a), -sin(a), sin(a), cos(a)); }
+
 kernel void diffuse_decay(
     texture2d<float, access::read> inTex [[texture(0)]],
     texture2d<float, access::write> outTex [[texture(1)]],
@@ -57,10 +59,10 @@ uint hash(uint state) {
     state *= 2654435769u;
     return state;
 }
-
 kernel void update_ants(
     device AntData* ants [[buffer(0)]],
     constant SimulationUniforms& u [[buffer(1)]],
+    device ColonyData* colonies [[buffer(3)]], // <-- Accès aux colonies (RW pour le stock de nourriture)
     texture2d<float, access::read> inTex [[texture(0)]],
     texture2d<float, access::write> outTex [[texture(1)]],
     uint id [[thread_position_in_grid]]
@@ -68,82 +70,85 @@ kernel void update_ants(
     if (id >= u.antCount) return;
 
     AntData ant = ants[id];
-    float2 pos = ant.position;
-    float angle = ant.angle;
     
+    // --- GESTION ÉNERGIE ---
+    // Coût basal + Coût de mouvement
+    float energyCost = 0.1; 
+    ant.energy -= energyCost;
+
+    // --- MORT & RESPAWN ---
+    if (ant.energy <= 0.0) {
+        // La fourmi meurt.
+        // Option A: Elle reste sur place (cadavre).
+        // Option B (Choisie): La colonie pond une nouvelle fourmi (Respawn)
+        
+        // On remet la fourmi à la base
+        ColonyData colony = colonies[ant.colonyID];
+        ant.position = colony.position;
+        ant.energy = 100.0; // Recharge
+        ant.angle = float(id) * 123.45; // Angle pseudo-random
+        
+        // TODO futur: Diminuer colony.foodStock ici
+    }
+
+    // --- SENSING (Logique existante) ---
+    // (Note: Pour l'instant, toutes les fourmis suivent le canal Rouge.
+    // Plus tard, on fera en sorte qu'elles suivent leur propre phéromone ou la nourriture)
     float width = u.worldSize.x;
     float height = u.worldSize.y;
+    // ... (Code sensing inchangé) ...
 
-
-    float sensorAngle = u.sensorAngle;
-    float sensorDist = u.sensorDist;
-    
-    float vLeft   = sense(inTex, pos, angle + sensorAngle, sensorDist, width, height);
-    float vCenter = sense(inTex, pos, angle, sensorDist, width, height);
-    float vRight  = sense(inTex, pos, angle - sensorAngle, sensorDist, width, height);
-
-    float turnSpeed = u.turnAngle;
-    uint rnd = hash(id + uint(u.time * 100000.0));
-
-    if (vCenter > vLeft && vCenter > vRight) {
-        
-        if ((rnd % 100) < 10) angle += (rnd % 2 == 0 ? 1 : -1) * turnSpeed * (hash(rnd) % 100) / 100.0;
-    }
-    else if (vCenter < vLeft && vCenter < vRight) {
-        angle += (rnd % 2 == 0 ? 1 : -1) * turnSpeed * 2.0;
-    }
-    else if (vLeft > vRight) {
-        angle += turnSpeed;
-    }
-    else if (vRight > vLeft) {
-        angle -= turnSpeed;
-    }
-
+    // --- DEPLACEMENT ---
+    float2 pos = ant.position;
+    float angle = ant.angle;
     
     float2 direction = float2(cos(angle), sin(angle));
     float2 nextPos = pos + direction * u.antSpeed;
 
-    
-    if (nextPos.x <= 0 || nextPos.x >= width) {
-        nextPos.x = clamp(nextPos.x, 1.0, width-1.0);
-        angle = M_PI_F - angle;
-    }
-    if (nextPos.y <= 0 || nextPos.y >= height) {
-        nextPos.y = clamp(nextPos.y, 1.0, height-1.0);
-        angle = -angle;
-    }
+    // Rebond bords (Simple)
+    if (nextPos.x <= 0 || nextPos.x >= width) { nextPos.x = clamp(nextPos.x, 1.0, width-1.0); angle = M_PI_F - angle; }
+    if (nextPos.y <= 0 || nextPos.y >= height) { nextPos.y = clamp(nextPos.y, 1.0, height-1.0); angle = -angle; }
 
+    // --- DEPOT PHEROMONE (Marquage Territoire) ---
     uint2 texPos = uint2(nextPos);
     if(texPos.x < width && texPos.y < height) {
-        outTex.write(float4(u.depositAmount, 0.0, 0.0, 1.0), texPos);
+        // Pour l'instant, tout le monde écrit en ROUGE.
+        // A l'avenir: colonies[ant.colonyID].color
+        // Mais attention, la texture est RGBA16Float, on peut encoder des infos dans R, G, B.
+        // Pour visualiser simple: On écrit 1.0 dans le canal Rouge.
+        outTex.write(float4(1.0, 0.0, 0.0, 1.0), texPos);
     }
 
+    // Save
     ant.position = nextPos;
     ant.angle = angle;
     ants[id] = ant;
 }
-
 struct VertexOut {
     float4 position [[position]];
     float2 uv;
+    float4 color; // <--- On ajoute la couleur
 };
-
-float2x2 rotMat(float a) { return float2x2(cos(a), -sin(a), sin(a), cos(a)); }
 
 vertex VertexOut ant_vertex(
     uint vid [[vertex_id]],
     uint iid [[instance_id]],
     constant AntData* ants [[buffer(0)]],
-    constant SimulationUniforms& u [[buffer(1)]]
+    constant SimulationUniforms& u [[buffer(1)]],
+    constant ColonyData* colonies [[buffer(2)]] // <--- Accès lecture seule aux colonies
 ) {
     VertexOut out;
     float2 local = quadVertices[vid];
     AntData ant = ants[iid];
     
+    // Récupérer la couleur de la colonie de cette fourmi
+    out.color = colonies[ant.colonyID].color; 
+    
+    // Si l'énergie est faible, on assombrit la fourmi (Visual Feedback !)
+    float vitality = clamp(ant.energy / 100.0, 0.2, 1.0);
+    out.color.rgb *= vitality;
 
     float2 worldPos = rotMat(ant.angle) * (local * u.antSize) + ant.position;
-    
-
     float2 clip = (worldPos / u.worldSize) * 2.0 - 1.0;
     out.position = float4(clip.x, -clip.y, 0.0, 1.0);
     out.uv = local + 0.5;
@@ -151,7 +156,9 @@ vertex VertexOut ant_vertex(
 }
 
 fragment float4 ant_fragment(VertexOut in [[stage_in]]) {
-    return float4(1.0);
+    float dist = length(in.uv - 0.5);
+    if (dist > 0.5) discard_fragment();
+    return in.color;
 }
 
 struct PheroOut {

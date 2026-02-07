@@ -27,6 +27,7 @@ private:
   CA::MetalLayer *_layer;
 
   MTL::Buffer *_antBuffer = nullptr;
+  MTL::Buffer *_colonyBuffer = nullptr;
   MTL::Buffer *_uniformBuffer = nullptr;
 
   MTL::Texture *_pheromoneTextures[2] = {nullptr, nullptr};

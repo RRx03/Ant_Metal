@@ -139,17 +139,39 @@ void Renderer::buildShaders() {
   kernelDiffuse->release();
   lib->release();
 }
-
 void Renderer::buildBuffers() {
+  int colonyCount = _settings.colonyCount;
+  std::vector<ColonyData> colonies(colonyCount);
+
+  colonies[0].position = {_width * 0.25f, _height * 0.25f};
+  colonies[0].color = {1.0, 0.2, 0.2, 1.0};
+  colonies[0].foodStock = 1000.0f;
+
+  colonies[1].position = {_width * 0.75f, _height * 0.25f};
+  colonies[1].color = {0.2, 0.2, 1.0, 1.0};
+  colonies[1].foodStock = 1000.0f;
+
+  colonies[2].position = {_width * 0.5f, _height * 0.75f};
+  colonies[2].color = {1.0, 1.0, 0.2, 1.0};
+  colonies[2].foodStock = 1000.0f;
+
+  _colonyBuffer =
+      _device->newBuffer(colonies.data(), colonyCount * sizeof(ColonyData),
+                         MTL::ResourceStorageModeShared);
+
   int count = _settings.antCount;
   std::vector<AntData> ants(count);
 
   for (int i = 0; i < count; i++) {
-    float angle = (float)(rand() % 360) * M_PI / 180.0f;
-    float dist = (float)(rand() % 100);
-    ants[i].position = {_width * 0.5f + cos(angle) * dist,
-                        _height * 0.5f + sin(angle) * dist};
-    ants[i].angle = angle;
+
+    int cID = rand() % colonyCount;
+
+    ants[i].colonyID = cID;
+    ants[i].position = colonies[cID].position;
+
+    ants[i].angle = (float)(rand() % 360) * M_PI / 180.0f;
+    ants[i].energy = 100.0f;
+    ants[i].state = 0;
   }
 
   size_t bufferSize = count * sizeof(AntData);
@@ -216,6 +238,7 @@ void Renderer::updateUniforms() {
   uniforms.worldSize = {(float)_width, (float)_height};
   uniforms.time += 0.01f;
   uniforms.deltaTime = 1.0f;
+  uniforms.colonyCount = _settings.colonyCount;
   memcpy(_uniformBuffer->contents(), &uniforms, sizeof(SimulationUniforms));
 }
 
@@ -249,6 +272,7 @@ void Renderer::renderFrame() {
   compute->setComputePipelineState(_computeMovePSO);
   compute->setBuffer(_antBuffer, 0, 0);
   compute->setBuffer(_uniformBuffer, 0, 1);
+  compute->setBuffer(_colonyBuffer, 0, 3);
   compute->setTexture(texWrite, 0);
   compute->setTexture(texWrite, 1);
 
@@ -292,6 +316,7 @@ void Renderer::renderFrame() {
     render->setDepthStencilState(_depthStencilState);
     render->setVertexBuffer(_antBuffer, 0, 0);
     render->setVertexBuffer(_uniformBuffer, 0, 1);
+    render->setVertexBuffer(_colonyBuffer, 0, 2);
     render->drawPrimitives(MTL::PrimitiveTypeTriangle, 0, 6,
                            _settings.antCount);
 

@@ -17,5 +17,7 @@ struct Settings {
   float evapSpeed = 0.50f;
   float depositAmount = 0.1f;
   float turnAngle = 0.4f;
+
+  int colonyCount = 3;
 };
 } // namespace Config
