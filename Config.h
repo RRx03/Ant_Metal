@@ -17,6 +17,9 @@ struct Settings {
   float evapSpeed = 0.50f;
   float depositAmount = 0.1f;
   float turnAngle = 0.4f;
+  float energyCost = 0.1f;
+  float initialEnergy = 100.0f;
+  float maxEnergy = 100.0f;
 
   int colonyCount = 3;
 };

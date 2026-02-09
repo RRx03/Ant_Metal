@@ -144,15 +144,15 @@ void Renderer::buildBuffers() {
   std::vector<ColonyData> colonies(colonyCount);
 
   colonies[0].position = {_width * 0.25f, _height * 0.25f};
-  colonies[0].color = {1.0, 0.2, 0.2, 1.0};
+  colonies[0].color = {1.0, 1.0, 1.0, 1.0};
   colonies[0].foodStock = 1000.0f;
 
   colonies[1].position = {_width * 0.75f, _height * 0.25f};
-  colonies[1].color = {0.2, 0.2, 1.0, 1.0};
+  colonies[1].color = {1.0, 1.0, 0.0, 1.0};
   colonies[1].foodStock = 1000.0f;
 
   colonies[2].position = {_width * 0.5f, _height * 0.75f};
-  colonies[2].color = {1.0, 1.0, 0.2, 1.0};
+  colonies[2].color = {1.0, 0.0, 1.0, 1.0};
   colonies[2].foodStock = 1000.0f;
 
   _colonyBuffer =
@@ -170,7 +170,7 @@ void Renderer::buildBuffers() {
     ants[i].position = colonies[cID].position;
 
     ants[i].angle = (float)(rand() % 360) * M_PI / 180.0f;
-    ants[i].energy = 100.0f;
+    ants[i].energy = _settings.initialEnergy;
     ants[i].state = 0;
   }
 
@@ -239,6 +239,9 @@ void Renderer::updateUniforms() {
   uniforms.time += 0.01f;
   uniforms.deltaTime = 1.0f;
   uniforms.colonyCount = _settings.colonyCount;
+  uniforms.energyCost = _settings.energyCost;
+  uniforms.initialEnergy = _settings.initialEnergy;
+  uniforms.maxEnergy = _settings.maxEnergy;
   memcpy(_uniformBuffer->contents(), &uniforms, sizeof(SimulationUniforms));
 }
 

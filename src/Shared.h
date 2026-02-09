@@ -33,4 +33,7 @@ struct SimulationUniforms {
   float time;
   float deltaTime;
   unsigned int colonyCount;
+  float energyCost;
+  float initialEnergy;
+  float maxEnergy;
 };
